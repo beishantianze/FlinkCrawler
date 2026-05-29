@@ -71,8 +71,11 @@ function findFriendPage(html, baseUrl) {
 
     if (FRIEND_KEYWORDS.some(kw => text.includes(kw))) {
       try {
-        friendUrl = new URL(href, baseUrl).href;
-        return false; // break loop
+        const urlObj = new URL(href, baseUrl);
+        if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+          friendUrl = urlObj.href;
+          return false; // break loop
+        }
       } catch (e) {
         // invalid URL
       }

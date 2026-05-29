@@ -43,9 +43,10 @@ class Crawler {
   }
 
   async crawl(startUrl) {
+    let startOrigin;
     try {
-      const startOrigin = new URL(startUrl).origin;
-      this.queue.push({ url: startOrigin, depth: 0 });
+      startOrigin = new URL(startUrl).origin;
+      this.queue.push({ url: startUrl, depth: 0, nodeOrigin: startOrigin });
       this.addNode(startOrigin);
     } catch (e) {
       console.error(`Invalid start URL: ${startUrl}`);
@@ -53,7 +54,7 @@ class Crawler {
     }
 
     while (this.queue.length > 0) {
-      const { url, depth } = this.queue.shift();
+      const { url, depth, nodeOrigin } = this.queue.shift();
 
       if (depth >= this.maxDepth || this.visited.has(url)) {
         continue;
@@ -62,33 +63,32 @@ class Crawler {
       console.log(`Crawling [Depth ${depth}]: ${url}`);
       this.visited.add(url);
 
-      // 1. Get homepage HTML to find friend page
       const homeHtml = await this.fetchHtml(url);
       if (!homeHtml) continue;
 
-      // Update node with metadata
+      // Update the node representing this blog with actual site metadata
       const meta = getSiteMetadata(homeHtml);
-      const node = this.nodes.get(url);
+      const node = this.nodes.get(nodeOrigin);
       if (node) {
         node.label = meta.title;
-        node.title = `${meta.title}\n${meta.description}`; // Tooltip for Vis.js
+        node.title = `${meta.title}\n${meta.description}`;
       }
 
       let friendPageUrl = findFriendPage(homeHtml, url);
       
+      // If we are already on a page that didn't yield a separate friend page link, 
+      // or if the found link is same as current, use current.
       if (!friendPageUrl) {
           friendPageUrl = url; 
       }
 
       console.log(`  Found friend page: ${friendPageUrl}`);
 
-      // 2. Extract links (from HTML and potential JSON)
       const friendHtml = (friendPageUrl === url) ? homeHtml : await this.fetchHtml(friendPageUrl);
       if (!friendHtml) continue;
 
       let links = extractFriendLinks(friendHtml, friendPageUrl);
       
-      // Try to find JSON links in the friend page
       const jsonUrls = findJsonLinks(friendHtml, friendPageUrl);
       for (const jsonUrl of jsonUrls) {
         console.log(`  Checking JSON data: ${jsonUrl}`);
@@ -101,23 +101,22 @@ class Crawler {
 
       console.log(`  Extracted ${links.length} links`);
 
-      const baseDomain = new URL(url).hostname;
+      const baseDomain = new URL(nodeOrigin).hostname;
 
       for (const link of links) {
         try {
-          const linkObj = new URL(link);
-          const linkDomain = linkObj.hostname;
+          const linkOrigin = new URL(link).origin;
+          const linkDomain = new URL(linkOrigin).hostname;
 
-          // Final filter before adding
           if (
             linkDomain !== baseDomain &&
             !SOCIAL_MEDIA_DOMAINS.some(domain => linkDomain.endsWith(domain))
           ) {
-            this.addNode(link);
-            this.addEdge(url, link);
+            this.addNode(linkOrigin);
+            this.addEdge(nodeOrigin, linkOrigin);
 
-            if (!this.visited.has(link) && depth + 1 < this.maxDepth) {
-              this.queue.push({ url: link, depth: depth + 1 });
+            if (!this.visited.has(linkOrigin) && depth + 1 < this.maxDepth) {
+              this.queue.push({ url: linkOrigin, depth: depth + 1, nodeOrigin: linkOrigin });
             }
           }
         } catch (e) {}

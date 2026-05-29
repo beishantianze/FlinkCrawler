@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Friend Link Graph</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style type="text/css">
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+        #network {
+            width: 100%;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        .vis-tooltip {
+            position: absolute;
+            visibility: hidden;
+            padding: 10px;
+            white-space: pre-wrap;
+            font-family: verdana;
+            font-size: 12px;
+            color: #000000;
+            background-color: #f5f4ed;
+            -moz-border-radius: 3px;
+            -webkit-border-radius: 3px;
+            border-radius: 3px;
+            border: 1px solid #808074;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+            max-width: 300px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>Blog Friend Link Graph</h3>
+        <p>Nodes: <span id="node-count">0</span> | Edges: <span id="edge-count">0</span></p>
+        <p><small>Hover for summary, <b>Double-click</b> to visit website.</small></p>
+    </div>
+    <div id="network"></div>
+
+    <script type="text/javascript">
+        const data = {"nodes":[{"id":"https://blog.v185v.xyz","label":"v185v的博客 - awa","title":"v185v的博客 - awa\n后端菜鸡"},{"id":"https://eliadoarias.top","label":"EliadOArias的博客 - 一个无趣的人的博客","title":"EliadOArias的博客 - 一个无趣的人的博客\n一段无趣的文字"},{"id":"https://www.endercrysta2.xyz","label":"EnderCrystal 个人主页","title":"EnderCrystal 个人主页\n绿色节能~"},{"id":"https://zheyi.in","label":"折乙 - blog","title":"折乙 - blog\n折乙 - blog"},{"id":"https://blog.sugarmgp.cn","label":"白糖的记事本","title":"白糖的记事本\n白糖洒一地的个人博客"},{"id":"https://zestfulyk.github.io","label":"https://zestfulyk.github.io"},{"id":"https://chtholly-daisuki.github.io","label":"chtholly-daisuki的小屋","title":"chtholly-daisuki的小屋\ncoding、文字和游戏"},{"id":"https://blog.fridayssheep.top","label":"Fridayssheep的鲸湾","title":"Fridayssheep的鲸湾\nFridayssheep的小站"},{"id":"https://shuntianyifang.github.io","label":"https://shuntianyifang.github.io"},{"id":"https://sugarmgp.cn","label":"https://sugarmgp.cn"},{"id":"https://daoyezongzi.github.io","label":"https://daoyezongzi.github.io"},{"id":"https://www.ysss-ee.xyz","label":"https://www.ysss-ee.xyz"},{"id":"https://scotianova.top","label":"https://scotianova.top"},{"id":"https://www.h2so4.site","label":"https://www.h2so4.site"},{"id":"https://wjsblog.xyz","label":"https://wjsblog.xyz"},{"id":"https://blog.stargazer-luciddream.top","label":"https://blog.stargazer-luciddream.top"},{"id":"https://heavensdoor1.top","label":"https://heavensdoor1.top"},{"id":"https://blog.xenlyra.cc","label":"https://blog.xenlyra.cc"},{"id":"https://gendo.dpdns.org","label":"https://gendo.dpdns.org"},{"id":"https://dumbdaidai.github.io","label":"https://dumbdaidai.github.io"},{"id":"https://fufffh.icu","label":"https://fufffh.icu"},{"id":"https://zhul.in","label":"https://zhul.in"},{"id":"https://zjutjh.github.io","label":"https://zjutjh.github.io"},{"id":"https://blog.imjh.top","label":"https://blog.imjh.top"},{"id":"https://www.mggovo.cn","label":"https://www.mggovo.cn"},{"id":"https://hstardawn.github.io","label":"https://hstardawn.github.io"},{"id":"https://blog.minhan.host","label":"https://blog.minhan.host"},{"id":"https://situchengxiang.pages.dev","label":"https://situchengxiang.pages.dev"},{"id":"https://blog.phlin.cn","label":"https://blog.phlin.cn"},{"id":"https://blog.bluebird.icu","label":"https://blog.bluebird.icu"},{"id":"https://www.lonesome.cn","label":"https://www.lonesome.cn"},{"id":"https://www.zyglq.cn","label":"https://www.zyglq.cn"},{"id":"https://blog.archlinux.tech","label":"https://blog.archlinux.tech"},{"id":"https://blog.xtexx.eu.org","label":"https://blog.xtexx.eu.org"},{"id":"https://blog.kitramgp.cn","label":"https://blog.kitramgp.cn"},{"id":"https://www.sunynov.top","label":"https://www.sunynov.top"},{"id":"https://muse.theme-next.org","label":"https://muse.theme-next.org"},{"id":"https://piapro.net","label":"https://piapro.net"},{"id":"https://zjutlug.cn","label":"https://zjutlug.cn"},{"id":"https://blog.a-hydrogen-ion.top","label":"https://blog.a-hydrogen-ion.top"},{"id":"https://chalgen.online","label":"https://chalgen.online"},{"id":"https://scienct.top","label":"https://scienct.top"},{"id":"https://www.fenghecsn.top","label":"https://www.fenghecsn.top"},{"id":"https://halo.run","label":"https://halo.run"},{"id":"https://www.rainyun.com","label":"https://www.rainyun.com"}],"edges":[{"from":"https://blog.v185v.xyz","to":"https://eliadoarias.top"},{"from":"https://blog.v185v.xyz","to":"https://www.endercrysta2.xyz"},{"from":"https://blog.v185v.xyz","to":"https://zheyi.in"},{"from":"https://blog.v185v.xyz","to":"https://blog.sugarmgp.cn"},{"from":"https://blog.v185v.xyz","to":"https://zestfulyk.github.io"},{"from":"https://blog.v185v.xyz","to":"https://chtholly-daisuki.github.io"},{"from":"https://blog.v185v.xyz","to":"https://blog.fridayssheep.top"},{"from":"https://blog.v185v.xyz","to":"https://shuntianyifang.github.io"},{"from":"https://www.endercrysta2.xyz","to":"https://sugarmgp.cn"},{"from":"https://www.endercrysta2.xyz","to":"https://zheyi.in"},{"from":"https://www.endercrysta2.xyz","to":"https://daoyezongzi.github.io"},{"from":"https://www.endercrysta2.xyz","to":"https://eliadoarias.top"},{"from":"https://www.endercrysta2.xyz","to":"https://www.ysss-ee.xyz"},{"from":"https://www.endercrysta2.xyz","to":"https://scotianova.top"},{"from":"https://www.endercrysta2.xyz","to":"https://www.h2so4.site"},{"from":"https://www.endercrysta2.xyz","to":"https://wjsblog.xyz"},{"from":"https://www.endercrysta2.xyz","to":"https://blog.stargazer-luciddream.top"},{"from":"https://www.endercrysta2.xyz","to":"https://blog.fridayssheep.top"},{"from":"https://www.endercrysta2.xyz","to":"https://heavensdoor1.top"},{"from":"https://www.endercrysta2.xyz","to":"https://blog.xenlyra.cc"},{"from":"https://www.endercrysta2.xyz","to":"https://gendo.dpdns.org"},{"from":"https://zheyi.in","to":"https://dumbdaidai.github.io"},{"from":"https://zheyi.in","to":"https://fufffh.icu"},{"from":"https://zheyi.in","to":"https://zhul.in"},{"from":"https://zheyi.in","to":"https://sugarmgp.cn"},{"from":"https://zheyi.in","to":"https://gendo.dpdns.org"},{"from":"https://blog.sugarmgp.cn","to":"https://zjutjh.github.io"},{"from":"https://blog.sugarmgp.cn","to":"https://blog.imjh.top"},{"from":"https://blog.sugarmgp.cn","to":"https://www.mggovo.cn"},{"from":"https://blog.sugarmgp.cn","to":"https://hstardawn.github.io"},{"from":"https://blog.sugarmgp.cn","to":"https://blog.minhan.host"},{"from":"https://blog.sugarmgp.cn","to":"https://zheyi.in"},{"from":"https://blog.sugarmgp.cn","to":"https://dumbdaidai.github.io"},{"from":"https://blog.sugarmgp.cn","to":"https://situchengxiang.pages.dev"},{"from":"https://blog.sugarmgp.cn","to":"https://blog.phlin.cn"},{"from":"https://blog.sugarmgp.cn","to":"https://blog.bluebird.icu"},{"from":"https://blog.sugarmgp.cn","to":"https://www.lonesome.cn"},{"from":"https://blog.sugarmgp.cn","to":"https://zhul.in"},{"from":"https://blog.sugarmgp.cn","to":"https://blog.fridayssheep.top"},{"from":"https://blog.sugarmgp.cn","to":"https://eliadoarias.top"},{"from":"https://blog.sugarmgp.cn","to":"https://www.zyglq.cn"},{"from":"https://blog.sugarmgp.cn","to":"https://blog.archlinux.tech"},{"from":"https://blog.sugarmgp.cn","to":"https://blog.xtexx.eu.org"},{"from":"https://blog.sugarmgp.cn","to":"https://blog.kitramgp.cn"},{"from":"https://blog.sugarmgp.cn","to":"https://www.sunynov.top"},{"from":"https://chtholly-daisuki.github.io","to":"https://muse.theme-next.org"},{"from":"https://blog.fridayssheep.top","to":"https://piapro.net"},{"from":"https://blog.fridayssheep.top","to":"https://zjutjh.github.io"},{"from":"https://blog.fridayssheep.top","to":"https://zjutlug.cn"},{"from":"https://blog.fridayssheep.top","to":"https://blog.a-hydrogen-ion.top"},{"from":"https://blog.fridayssheep.top","to":"https://blog.sugarmgp.cn"},{"from":"https://blog.fridayssheep.top","to":"https://eliadoarias.top"},{"from":"https://blog.fridayssheep.top","to":"https://zheyi.in"},{"from":"https://blog.fridayssheep.top","to":"https://shuntianyifang.github.io"},{"from":"https://blog.fridayssheep.top","to":"https://scotianova.top"},{"from":"https://blog.fridayssheep.top","to":"https://chalgen.online"},{"from":"https://blog.fridayssheep.top","to":"https://www.ysss-ee.xyz"},{"from":"https://blog.fridayssheep.top","to":"https://www.endercrysta2.xyz"},{"from":"https://blog.fridayssheep.top","to":"https://scienct.top"},{"from":"https://blog.fridayssheep.top","to":"https://www.fenghecsn.top"},{"from":"https://blog.fridayssheep.top","to":"https://blog.xenlyra.cc"},{"from":"https://blog.fridayssheep.top","to":"https://zhul.in"},{"from":"https://blog.fridayssheep.top","to":"https://gendo.dpdns.org"},{"from":"https://blog.fridayssheep.top","to":"https://blog.v185v.xyz"},{"from":"https://blog.fridayssheep.top","to":"https://halo.run"},{"from":"https://blog.fridayssheep.top","to":"https://www.rainyun.com"}]};
+
+        // Relationship-based Clustering (Label Propagation Algorithm)
+        function clusterByRelationships(nodes, edges) {
+            const adj = {};
+            nodes.forEach(n => adj[n.id] = new Set());
+            edges.forEach(e => {
+                if (adj[e.from] && adj[e.to]) {
+                    adj[e.from].add(e.to);
+                    adj[e.to].add(e.from); // Treat as undirected for community detection
+                }
+            });
+
+            // Initialize labels
+            let labels = {};
+            nodes.forEach((n, i) => labels[n.id] = i);
+
+            // Iterate LPA
+            const iterations = 10;
+            for (let i = 0; i < iterations; i++) {
+                let newLabels = { ...labels };
+                let changed = false;
+                
+                // Shuffle nodes for better convergence
+                const shuffledIds = nodes.map(n => n.id).sort(() => Math.random() - 0.5);
+                
+                shuffledIds.forEach(id => {
+                    const neighbors = adj[id];
+                    if (neighbors.size === 0) return;
+
+                    const counts = {};
+                    neighbors.forEach(neighId => {
+                        const lab = labels[neighId];
+                        counts[lab] = (counts[lab] || 0) + 1;
+                    });
+
+                    // Find max frequency label
+                    let maxFreq = 0;
+                    let bestLabels = [];
+                    for (let lab in counts) {
+                        if (counts[lab] > maxFreq) {
+                            maxFreq = counts[lab];
+                            bestLabels = [lab];
+                        } else if (counts[lab] === maxFreq) {
+                            bestLabels.push(lab);
+                        }
+                    }
+                    
+                    const chosenLabel = parseInt(bestLabels[Math.floor(Math.random() * bestLabels.length)]);
+                    if (newLabels[id] !== chosenLabel) {
+                        newLabels[id] = chosenLabel;
+                        changed = true;
+                    }
+                });
+                labels = newLabels;
+                if (!changed) break;
+            }
+
+            // Map final labels to small group numbers for Vis.js
+            const labelMap = {};
+            let groupNext = 0;
+            nodes.forEach(n => {
+                const l = labels[n.id];
+                if (labelMap[l] === undefined) labelMap[l] = groupNext++;
+                n.group = labelMap[l];
+            });
+        }
+
+        clusterByRelationships(data.nodes, data.edges);
+        
+        document.getElementById('node-count').innerText = data.nodes.length;
+        document.getElementById('edge-count').innerText = data.edges.length;
+
+        const container = document.getElementById('network');
+        const options = {
+            nodes: {
+                shape: 'dot',
+                size: 20,
+                font: { size: 14, color: '#333' },
+                borderWidth: 2,
+                shadow: true
+            },
+            edges: {
+                width: 1,
+                arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+                color: { opacity: 0.4 },
+                smooth: { type: 'continuous' }
+            },
+            physics: {
+                barnesHut: {
+                    gravitationalConstant: -2000,
+                    centralGravity: 0.3,
+                    springLength: 95,
+                    springConstant: 0.04,
+                    damping: 0.09,
+                    avoidOverlap: 0.1
+                },
+                stabilization: { iterations: 100 }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 300
+            }
+        };
+
+        const network = new vis.Network(container, data, options);
+
+        // Visit website on double click
+        network.on("doubleClick", function (params) {
+            if (params.nodes.length > 0) {
+                const url = params.nodes[0];
+                window.open(url, '_blank');
+            }
+        });
+    </script>
+</body>
+</html>
+  
