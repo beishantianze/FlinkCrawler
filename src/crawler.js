@@ -5,6 +5,7 @@ const {
   findJsonLinks, 
   extractLinksFromJson,
   getSiteMetadata,
+  normalizeBlogUrl,
   SOCIAL_MEDIA_DOMAINS 
 } = require('./parser');
 
@@ -13,9 +14,9 @@ class Crawler {
     this.maxDepth = options.depth || 2;
     this.concurrency = options.concurrency || 5;
     this.visited = new Set();
-    this.nodes = new Map(); // url -> { id, label }
+    this.nodes = new Map(); // nodeId -> { id, label, title, group }
     this.edges = []; // [{ from, to }]
-    this.queue = []; // [{ url, depth }]
+    this.queue = []; // [{ url, depth, nodeId }]
   }
 
   async fetchHtml(url) {
@@ -43,18 +44,18 @@ class Crawler {
   }
 
   async crawl(startUrl) {
-    let startOrigin;
+    let startNodeId;
     try {
-      startOrigin = new URL(startUrl).origin;
-      this.queue.push({ url: startUrl, depth: 0, nodeOrigin: startOrigin });
-      this.addNode(startOrigin);
+      startNodeId = normalizeBlogUrl(startUrl);
+      this.queue.push({ url: startUrl, depth: 0, nodeId: startNodeId });
+      this.addNode(startNodeId);
     } catch (e) {
       console.error(`Invalid start URL: ${startUrl}`);
       return;
     }
 
     while (this.queue.length > 0) {
-      const { url, depth, nodeOrigin } = this.queue.shift();
+      const { url, depth, nodeId } = this.queue.shift();
 
       if (depth >= this.maxDepth || this.visited.has(url)) {
         continue;
@@ -68,7 +69,7 @@ class Crawler {
 
       // Update the node representing this blog with actual site metadata
       const meta = getSiteMetadata(homeHtml);
-      const node = this.nodes.get(nodeOrigin);
+      const node = this.nodes.get(nodeId);
       if (node) {
         node.label = meta.title;
         node.title = `${meta.title}\n${meta.description}`;
@@ -76,8 +77,6 @@ class Crawler {
 
       let friendPageUrl = findFriendPage(homeHtml, url);
       
-      // If we are already on a page that didn't yield a separate friend page link, 
-      // or if the found link is same as current, use current.
       if (!friendPageUrl) {
           friendPageUrl = url; 
       }
@@ -101,22 +100,22 @@ class Crawler {
 
       console.log(`  Extracted ${links.length} links`);
 
-      const baseDomain = new URL(nodeOrigin).hostname;
+      const baseDomain = new URL(nodeId).hostname;
 
       for (const link of links) {
         try {
-          const linkOrigin = new URL(link).origin;
-          const linkDomain = new URL(linkOrigin).hostname;
+          const linkNodeId = normalizeBlogUrl(link);
+          const linkDomain = new URL(linkNodeId).hostname;
 
           if (
             linkDomain !== baseDomain &&
             !SOCIAL_MEDIA_DOMAINS.some(domain => linkDomain.endsWith(domain))
           ) {
-            this.addNode(linkOrigin);
-            this.addEdge(nodeOrigin, linkOrigin);
+            this.addNode(linkNodeId);
+            this.addEdge(nodeId, linkNodeId);
 
-            if (!this.visited.has(linkOrigin) && depth + 1 < this.maxDepth) {
-              this.queue.push({ url: linkOrigin, depth: depth + 1, nodeOrigin: linkOrigin });
+            if (!this.visited.has(linkNodeId) && depth + 1 < this.maxDepth) {
+              this.queue.push({ url: linkNodeId, depth: depth + 1, nodeId: linkNodeId });
             }
           }
         } catch (e) {}
@@ -129,9 +128,9 @@ class Crawler {
     };
   }
 
-  addNode(url) {
-    if (!this.nodes.has(url)) {
-      this.nodes.set(url, { id: url, label: url });
+  addNode(nodeId) {
+    if (!this.nodes.has(nodeId)) {
+      this.nodes.set(nodeId, { id: nodeId, label: nodeId });
     }
   }
 

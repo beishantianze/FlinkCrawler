@@ -15,6 +15,40 @@ const SOCIAL_MEDIA_DOMAINS = [
 ];
 
 /**
+ * Normalizes a blog URL by removing trailing slashes and common subpages (links, archives, etc.)
+ * to identify the core blog "identity".
+ */
+function normalizeBlogUrl(url) {
+  try {
+    const urlObj = new URL(url);
+    urlObj.hash = '';
+    urlObj.search = '';
+    let href = urlObj.href.replace(/\/$/, '');
+    
+    const patterns = [
+      /\/links?(\/|\.html|\.php)?$/i,
+      /\/friends?(\/|\.html|\.php)?$/i,
+      /\/about(\/|\.html|\.php)?$/i,
+      /\/archive(s)?(\/.*)?$/i,
+      /\/index\.(html|php)$/i,
+      /\/page\/\d+\/?$/i,
+      /\/posts?(\/.*)?$/i
+    ];
+    
+    for (const p of patterns) {
+      if (p.test(href)) {
+        href = href.replace(p, '');
+        break;
+      }
+    }
+    
+    return href.replace(/\/$/, '') || urlObj.origin;
+  } catch (e) {
+    return url;
+  }
+}
+
+/**
  * Validates if a URL is likely a real personal blog/site.
  */
 function isPotentialBlog(url) {
@@ -116,10 +150,9 @@ function extractLinksFromJson(json) {
   let match;
   while ((match = urlRegex.exec(jsonStr)) !== null) {
     try {
-      const urlObj = new URL(match[0]);
-      const origin = urlObj.origin;
-      if (isPotentialBlog(origin)) {
-        links.add(origin);
+      const normalized = normalizeBlogUrl(match[0]);
+      if (isPotentialBlog(normalized)) {
+        links.add(normalized);
       }
     } catch (e) {}
   }
@@ -144,10 +177,12 @@ function extractFriendLinks(html, baseUrl) {
 
       if (
         (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') &&
-        targetDomain !== baseDomain &&
-        isPotentialBlog(urlObj.origin)
+        targetDomain !== baseDomain
       ) {
-        links.add(urlObj.origin);
+        const normalized = normalizeBlogUrl(urlObj.href);
+        if (isPotentialBlog(normalized)) {
+          links.add(normalized);
+        }
       }
     } catch (e) {}
   });
@@ -161,5 +196,6 @@ module.exports = {
   findJsonLinks,
   extractLinksFromJson,
   getSiteMetadata,
+  normalizeBlogUrl,
   SOCIAL_MEDIA_DOMAINS
 };
